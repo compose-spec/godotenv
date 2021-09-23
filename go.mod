@@ -1,3 +1,3 @@
-module github.com/joho/godotenv
+module github.com/compose-spec/godotenv
 
-go 1.12
+go 1.16
