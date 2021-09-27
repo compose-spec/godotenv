@@ -16,7 +16,7 @@ const (
 	exportPrefix = "export"
 )
 
-func parseBytes(src []byte, out map[string]string) error {
+func parseBytes(src []byte, out map[string]string, lookupFn LookupFn) error {
 	cutset := src
 	for {
 		cutset = getStatementStart(cutset)
@@ -28,6 +28,22 @@ func parseBytes(src []byte, out map[string]string) error {
 		key, left, err := locateKeyName(cutset)
 		if err != nil {
 			return err
+		}
+		if strings.Contains(key, " ") {
+			return errors.New("key cannot contain a space")
+		}
+
+		if left == nil  {
+			if lookupFn == nil {
+				lookupFn = noLookupFn
+			}
+
+			value, ok := lookupFn(key)
+			if ok {
+				out[key] = value
+				cutset = left
+				continue
+			}
 		}
 
 		value, left, err := extractVarValue(left, out)
@@ -80,7 +96,7 @@ loop:
 		}
 
 		switch char {
-		case '=', ':':
+		case '=', ':', '\n':
 			// library also supports yaml-style value declaration
 			key = string(src[0:i])
 			offset = i + 1

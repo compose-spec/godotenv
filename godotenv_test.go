@@ -487,7 +487,7 @@ func TestRoundtrip(t *testing.T) {
 	fixtures := []string{"equals.env", "exported.env", "plain.env", "quoted.env"}
 	for _, fixture := range fixtures {
 		fixtureFilename := fmt.Sprintf("fixtures/%s", fixture)
-		env, err := readFile(fixtureFilename)
+		env, err := readFile(fixtureFilename, nil)
 		if err != nil {
 			t.Errorf("Expected '%s' to read without error (%v)", fixtureFilename, err)
 		}
@@ -503,5 +503,54 @@ func TestRoundtrip(t *testing.T) {
 			t.Errorf("Expected '%s' to roundtrip as '%v', got '%v' instead", fixtureFilename, env, roundtripped)
 		}
 
+	}
+}
+
+func TestInheritedEnvVariable(t *testing.T) {
+	const envKey = "VAR_TO_BE_LOADED_FROM_OS_ENV"
+	const envVal = "SOME_RANDOM_VALUE"
+	os.Setenv(envKey, envVal)
+
+	envFileName := "fixtures/inherited.env"
+	expectedValues := map[string]string{
+		envKey: envVal,
+	}
+
+	envMap, err := ReadWithLookup(os.LookupEnv, envFileName)
+	if err != nil {
+		t.Error("Error reading file")
+	}
+	if len(envMap) != len(expectedValues) {
+		t.Error("Didn't get the right size map back")
+	}
+	for key, value := range expectedValues {
+		if envMap[key] != value {
+			t.Error("Read got one of the keys wrong")
+		}
+	}
+}
+
+func TestInheritedEnvVariableNotFound(t *testing.T) {
+	envMap, err := Read("fixtures/inherited-not-found.env")
+	if envMap["VARIABLE_NOT_FOUND"] != "" || err != nil {
+		t.Errorf("Expected 'VARIABLE_NOT_FOUND' to be '' with no errors")
+	}
+}
+
+func TestInheritedEnvVariableNotFoundWithLookup(t *testing.T) {
+	notFoundMap := make(map[string]interface{})
+	envMap, err := ReadWithLookup(func(v string)(string, bool){
+		envVar, ok := os.LookupEnv(v)
+		if !ok {
+			notFoundMap[v] = nil
+		}
+		return envVar, ok
+	}, "fixtures/inherited-not-found.env")
+	if envMap["VARIABLE_NOT_FOUND"] != "" || err != nil {
+		t.Errorf("Expected 'VARIABLE_NOT_FOUND' to be '' with no errors")
+	}
+	_, ok := notFoundMap["VARIABLE_NOT_FOUND"]
+	if !ok {
+		t.Errorf("Expected 'VARIABLE_NOT_FOUND' to be in the set of not found variables")
 	}
 }
