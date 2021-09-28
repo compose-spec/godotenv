@@ -506,12 +506,38 @@ func TestRoundtrip(t *testing.T) {
 	}
 }
 
-func TestInheritedEnvVariable(t *testing.T) {
+func TestInheritedEnvVariablSameSize(t *testing.T) {
 	const envKey = "VAR_TO_BE_LOADED_FROM_OS_ENV"
 	const envVal = "SOME_RANDOM_VALUE"
 	os.Setenv(envKey, envVal)
 
-	envFileName := "fixtures/inherited.env"
+	envFileName := "fixtures/inherited-multi-var.env"
+	expectedValues := map[string]string{
+		envKey: envVal,
+		"foo": "bar",
+		"bar": "baz",
+	}
+
+	envMap, err := ReadWithLookup(os.LookupEnv, envFileName)
+	if err != nil {
+		t.Error("Error reading file")
+	}
+	if len(envMap) != len(expectedValues) {
+		t.Error("Didn't get the right size map back")
+	}
+	for key, value := range expectedValues {
+		if envMap[key] != value {
+			t.Errorf("Read got one of the keys wrong, [%q]->%q", key, envMap[key])
+		}
+	}
+}
+
+func TestInheritedEnvVariablSingleVar(t *testing.T) {
+	const envKey = "VAR_TO_BE_LOADED_FROM_OS_ENV"
+	const envVal = "SOME_RANDOM_VALUE"
+	os.Setenv(envKey, envVal)
+
+	envFileName := "fixtures/inherited-single-var.env"
 	expectedValues := map[string]string{
 		envKey: envVal,
 	}
@@ -525,7 +551,7 @@ func TestInheritedEnvVariable(t *testing.T) {
 	}
 	for key, value := range expectedValues {
 		if envMap[key] != value {
-			t.Error("Read got one of the keys wrong")
+			t.Errorf("Read got one of the keys wrong, [%q]->%q", key, envMap[key])
 		}
 	}
 }
