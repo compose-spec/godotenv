@@ -25,7 +25,7 @@ func parseBytes(src []byte, out map[string]string, lookupFn LookupFn) error {
 			break
 		}
 
-		key, left, err := locateKeyName(cutset)
+		key, left, inherited, err := locateKeyName(cutset)
 		if err != nil {
 			return err
 		}
@@ -33,7 +33,7 @@ func parseBytes(src []byte, out map[string]string, lookupFn LookupFn) error {
 			return errors.New("key cannot contain a space")
 		}
 
-		if left == nil  {
+		if inherited {
 			if lookupFn == nil {
 				lookupFn = noLookupFn
 			}
@@ -82,7 +82,7 @@ func getStatementStart(src []byte) []byte {
 }
 
 // locateKeyName locates and parses key name and returns rest of slice
-func locateKeyName(src []byte) (key string, cutset []byte, err error) {
+func locateKeyName(src []byte) (key string, cutset []byte, inherited bool, err error) {
 	// trim "export" and space at beginning
 	src = bytes.TrimLeftFunc(bytes.TrimPrefix(src, []byte(exportPrefix)), isSpace)
 
@@ -100,6 +100,7 @@ loop:
 			// library also supports yaml-style value declaration
 			key = string(src[0:i])
 			offset = i + 1
+			inherited = char == '\n'
 			break loop
 		case '_':
 		default:
@@ -108,20 +109,20 @@ loop:
 				continue
 			}
 
-			return "", nil, fmt.Errorf(
+			return "", nil, inherited, fmt.Errorf(
 				`unexpected character %q in variable name near %q`,
 				string(char), string(src))
 		}
 	}
 
 	if len(src) == 0 {
-		return "", nil, errors.New("zero length string")
+		return "", nil, inherited, errors.New("zero length string")
 	}
 
 	// trim whitespace
 	key = strings.TrimRightFunc(key, unicode.IsSpace)
 	cutset = bytes.TrimLeftFunc(src[offset:], isSpace)
-	return key, cutset, nil
+	return key, cutset, inherited, nil
 }
 
 // extractVarValue extracts variable value and returns rest of slice
