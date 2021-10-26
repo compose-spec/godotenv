@@ -514,8 +514,8 @@ func TestInheritedEnvVariablSameSize(t *testing.T) {
 	envFileName := "fixtures/inherited-multi-var.env"
 	expectedValues := map[string]string{
 		envKey: envVal,
-		"foo": "bar",
-		"bar": "baz",
+		"foo":  "bar",
+		"bar":  "baz",
 	}
 
 	envMap, err := ReadWithLookup(os.LookupEnv, envFileName)
@@ -565,7 +565,7 @@ func TestInheritedEnvVariableNotFound(t *testing.T) {
 
 func TestInheritedEnvVariableNotFoundWithLookup(t *testing.T) {
 	notFoundMap := make(map[string]interface{})
-	envMap, err := ReadWithLookup(func(v string)(string, bool){
+	envMap, err := ReadWithLookup(func(v string) (string, bool) {
 		envVar, ok := os.LookupEnv(v)
 		if !ok {
 			notFoundMap[v] = nil
@@ -578,5 +578,19 @@ func TestInheritedEnvVariableNotFoundWithLookup(t *testing.T) {
 	_, ok := notFoundMap["VARIABLE_NOT_FOUND"]
 	if !ok {
 		t.Errorf("Expected 'VARIABLE_NOT_FOUND' to be in the set of not found variables")
+	}
+}
+
+func TestExpendingEnvironmentWithLookup(t *testing.T) {
+	rawEnvLine := "TEST=$ME"
+	expectedValue := "YES"
+	key, value, _ := parseLineWithLookup(rawEnvLine, noopPresets, func(s string) (string, bool) {
+		if s == "ME" {
+			return expectedValue, true
+		}
+		return "NO", false
+	})
+	if value != "YES" {
+		t.Errorf("Expected '%v' to parse as '%v' => '%v', got '%v' => '%v' instead", rawEnvLine, key, expectedValue, key, value)
 	}
 }
