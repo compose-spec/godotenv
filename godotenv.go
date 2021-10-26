@@ -353,9 +353,8 @@ func expandVariables(v string, envMap map[string]string, lookupFn LookupFn) stri
 			s2, ok := lookupFn(submatch[4])
 			if ok {
 				return s2
-			} else {
-				return ""
 			}
+			return ""
 		}
 		return s
 	})
