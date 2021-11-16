@@ -199,6 +199,19 @@ and so on`,
 	loadEnvAndCompareValues(t, Load, envFileName, expectedValues, noopPresets)
 }
 
+func TestLoadUnquotedEnv(t *testing.T) {
+	envFileName := "fixtures/unquoted.env"
+	expectedValues := map[string]string{
+		"OPTION_A": "some quoted phrase",
+		"OPTION_B": "first one with an unquoted phrase",
+		"OPTION_C": "then another one with an unquoted phrase",
+		"OPTION_D": "then another one with an unquoted phrase special è char",
+		"OPTION_E": "then another one quoted phrase",
+	}
+
+	loadEnvAndCompareValues(t, Load, envFileName, expectedValues, noopPresets)
+}
+
 func TestSubstitutions(t *testing.T) {
 	envFileName := "fixtures/substitutions.env"
 	expectedValues := map[string]string{
