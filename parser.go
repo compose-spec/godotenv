@@ -41,9 +41,9 @@ func parseBytes(src []byte, out map[string]string, lookupFn LookupFn) error {
 			value, ok := lookupFn(key)
 			if ok {
 				out[key] = value
-				cutset = left
-				continue
 			}
+			cutset = left
+			continue
 		}
 
 		value, left, err := extractVarValue(left, out, lookupFn)
@@ -227,7 +227,6 @@ func isSpace(r rune) bool {
 	}
 	return false
 }
-
 
 // isNewLine reports whether the rune is a new line character
 func isNewLine(r rune) bool {
