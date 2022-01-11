@@ -132,14 +132,15 @@ func extractVarValue(src []byte, envMap map[string]string, lookupFn LookupFn) (v
 		// unquoted value - read until new line
 		end := bytes.IndexFunc(src, isNewLine)
 		var rest []byte
-		var value string
+
 		if end < 0 {
-			value := strings.TrimRightFunc(string(src), unicode.IsSpace)
+			value := strings.Split(string(src), "#")[0] // Remove inline comments on unquoted lines
+			value = strings.TrimRightFunc(value, unicode.IsSpace)
 			rest = nil
 			return expandVariables(value, envMap, lookupFn), rest, nil
 		}
-
-		value = strings.TrimRightFunc(string(src[0:end]), unicode.IsSpace)
+		value := strings.Split(string(src[0:end]), "#")[0]
+		value = strings.TrimRightFunc(value, unicode.IsSpace)
 		rest = src[end:]
 		return expandVariables(value, envMap, lookupFn), rest, nil
 	}
@@ -227,7 +228,6 @@ func isSpace(r rune) bool {
 	}
 	return false
 }
-
 
 // isNewLine reports whether the rune is a new line character
 func isNewLine(r rune) bool {
